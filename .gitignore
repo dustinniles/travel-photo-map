@@ -16,6 +16,9 @@ token.json
 service-account-key.json
 *.key.json
 
+# Firebase client config (contains API key)
+js/firebase-config.js
+
 # Raw location data (personal/sensitive)
 data/location-history.json
 
