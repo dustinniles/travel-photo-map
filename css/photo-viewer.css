@@ -1,0 +1,406 @@
+/* ══════════════════════════════════════════════════
+   Photo Viewer — Immersive overlay
+   ══════════════════════════════════════════════════ */
+
+/* ── Overlay ── */
+.pv-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.95);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.pv-overlay.pv-open {
+    opacity: 1;
+}
+
+/* ── FLIP animation ── */
+.pv-overlay.pv-anim {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.pv-overlay.pv-anim .pv-wrap {
+    transform: translate(
+        calc(var(--pv-sx, 50vw) - 50vw + var(--pv-sw, 0px) / 2),
+        calc(var(--pv-sy, 50vh) - 50vh + var(--pv-sh, 0px) / 2)
+    ) scale(0.15);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pv-overlay.pv-anim.pv-open {
+    opacity: 1;
+}
+.pv-overlay.pv-anim.pv-open .pv-wrap {
+    transform: translate(0, 0) scale(1);
+}
+
+/* Close animation */
+.pv-overlay.pv-closing {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.pv-overlay.pv-anim.pv-closing .pv-wrap {
+    transform: translate(
+        calc(var(--pv-sx, 50vw) - 50vw + var(--pv-sw, 0px) / 2),
+        calc(var(--pv-sy, 50vh) - 50vh + var(--pv-sh, 0px) / 2)
+    ) scale(0.15);
+}
+
+/* Fade fallback */
+.pv-overlay.pv-fade {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.pv-overlay.pv-fade.pv-open {
+    opacity: 1;
+}
+
+/* ── Media wrap ── */
+.pv-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+}
+
+.pv-media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    overflow: hidden;
+}
+
+.pv-media img,
+.pv-media video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    will-change: transform;
+}
+
+.pv-media img {
+    -webkit-user-drag: none;
+    pointer-events: none;
+}
+
+/* Progressive loading crossfade */
+.pv-img.pv-loading {
+    filter: blur(6px);
+    transition: filter 0.3s ease;
+}
+
+.pv-img:not(.pv-loading) {
+    filter: none;
+    transition: filter 0.3s ease;
+}
+
+/* Zoomed cursor states */
+.pv-zoomed .pv-media {
+    cursor: grab;
+}
+.pv-zoomed .pv-media:active {
+    cursor: grabbing;
+}
+
+/* ── Controls (all hidden by default, visible with class) ── */
+.pv-ctrl {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+.pv-controls-visible .pv-ctrl {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Close button */
+.pv-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    z-index: 2001;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 36px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Favorite button */
+.pv-fav {
+    position: absolute;
+    top: 12px;
+    right: 64px;
+    z-index: 2001;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease, transform 0.15s ease, opacity 0.2s ease;
+}
+.pv-fav:hover {
+    color: #d4a853;
+    transform: scale(1.15);
+}
+.pv-fav.pv-is-fav {
+    color: #d4a853;
+}
+
+/* ── Navigation arrows ── */
+.pv-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2001;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 32px;
+    padding: 16px 12px;
+    cursor: pointer;
+    border-radius: 50%;
+    min-width: 48px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, opacity 0.2s ease;
+}
+.pv-nav:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+.pv-prev { left: 12px; }
+.pv-next { right: 12px; }
+
+/* Desktop: show nav only on hover near edges */
+@media (hover: hover) {
+    .pv-nav {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    .pv-controls-visible .pv-nav.pv-nav-hover {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+}
+
+/* ── Info panel ── */
+.pv-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 48px 20px 20px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+    color: white;
+    z-index: 2001;
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+.pv-cap {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    line-height: 1.3;
+}
+.pv-cap-placeholder::after {
+    content: attr(data-placeholder);
+    opacity: 0.5;
+    font-style: italic;
+}
+
+.pv-cap-ed {
+    margin-bottom: 6px;
+}
+.pv-cap-in {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    padding: 8px;
+    resize: vertical;
+    font-family: inherit;
+}
+.pv-cap-in:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.pv-date {
+    font-size: 13px;
+    opacity: 0.7;
+    margin: 0 0 6px;
+}
+
+/* Tags */
+.pv-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+.pv-tag {
+    background: rgba(255, 255, 255, 0.18);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+/* Tag editor */
+.pv-tag-ed {
+    margin-bottom: 8px;
+}
+.pv-tag-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+.pv-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.18);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+}
+.pv-chip-x {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+}
+.pv-chip-x:hover {
+    color: white;
+}
+
+.pv-tag-in {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    color: white;
+    font-size: 12px;
+    padding: 6px 8px;
+    width: 140px;
+    font-family: inherit;
+}
+.pv-tag-in:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Google Photos link */
+.pv-link {
+    color: #d4a853;
+    font-size: 13px;
+    text-decoration: none;
+}
+.pv-link:hover {
+    text-decoration: underline;
+}
+
+/* ── Error placeholder ── */
+.pv-error {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 16px;
+    text-align: center;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+/* ── Video ── */
+.pv-video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* ══════════════════════════════════════════════════
+   Mobile-specific (T015)
+   ══════════════════════════════════════════════════ */
+@media (max-width: 768px), (hover: none) {
+    .pv-overlay {
+        background: rgba(0, 0, 0, 1);
+    }
+
+    .pv-wrap {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+    }
+
+    .pv-media img,
+    .pv-media video {
+        max-width: 100vw;
+        max-height: 100vh;
+        max-height: 100dvh;
+    }
+
+    /* Safe area padding for notched devices */
+    .pv-close {
+        top: max(12px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
+    }
+    .pv-fav {
+        top: max(12px, env(safe-area-inset-top));
+        right: max(64px, calc(52px + env(safe-area-inset-right)));
+    }
+    .pv-info {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+
+    /* Nav arrows: slightly smaller on mobile */
+    .pv-nav {
+        font-size: 24px;
+        padding: 12px 10px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* ══════════════════════════════════════════════════
+   Desktop-specific (T023)
+   ══════════════════════════════════════════════════ */
+@media (min-width: 769px) and (hover: hover) {
+    .pv-media img,
+    .pv-media video {
+        max-width: 90vw;
+        max-height: 90vh;
+    }
+}
