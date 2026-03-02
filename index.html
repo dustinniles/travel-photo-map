@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/leaflet.css">
     <link rel="stylesheet" href="css/Leaflet.Photo.css">
     <link rel="stylesheet" href="css/map.css">
+    <link rel="stylesheet" href="css/photo-viewer.css">
 </head>
 <body>
     <div id="map"></div>
@@ -28,6 +29,7 @@
     <script src="js/Leaflet.Photo.js"></script>
     <!-- <script src="js/ForceLayout.js"></script> -->
     <script src="js/ViewportSampler.js"></script>
+    <script src="js/photo-viewer.js"></script>
     <script>
         (function () {
             var map = L.map('map').setView([20, 0], 2);
@@ -197,480 +199,32 @@
                 setFavorites(favs);
             }
 
-            // Editor visibility control — hides edit controls for non-editors
+            // Editor visibility control — photo viewer handles its own editor UI internally
             function updateEditControlsVisibility() {
-                var isEditor = !!(window.firebaseAuth && window.firebaseAuth.isEditor);
-                var favBtns = document.querySelectorAll('.lightbox-favorite');
-                for (var i = 0; i < favBtns.length; i++) {
-                    favBtns[i].style.display = isEditor ? '' : 'none';
-                }
-                var tagEditors = document.querySelectorAll('.tag-editor');
-                for (var j = 0; j < tagEditors.length; j++) {
-                    tagEditors[j].style.display = isEditor ? '' : 'none';
-                }
-                var captionEls = document.querySelectorAll('.lightbox-caption');
-                for (var k = 0; k < captionEls.length; k++) {
-                    captionEls[k].style.cursor = isEditor ? 'pointer' : '';
-                }
+                // No-op: the new photo viewer module reads firebaseAuth.isEditor
+                // directly when rendering info panel content.
             }
 
-            var lightboxIndex = -1;
-            var lightboxOverlay = null;
-            var lbZoom = { scale: 1, translateX: 0, translateY: 0, isPanning: false, isPinching: false, _didDrag: false };
+            // Old lightbox code removed — replaced by js/photo-viewer.js
 
-            function resetZoom() {
-                lbZoom.scale = 1;
-                lbZoom.translateX = 0;
-                lbZoom.translateY = 0;
-                lbZoom.isPanning = false;
-                lbZoom.isPinching = false;
-                lbZoom._didDrag = false;
-                if (lightboxOverlay) {
-                    var content = lightboxOverlay.querySelector('.lightbox-media img, .lightbox-media video');
-                    if (content) {
-                        content.style.transform = '';
-                        content.style.transformOrigin = '';
-                    }
-                    var mc = lightboxOverlay.querySelector('.lightbox-media');
-                    if (mc) mc.classList.remove('zoomed');
-                    var zc = lightboxOverlay.querySelector('.lightbox-zoom-controls');
-                    if (zc) zc.classList.remove('visible');
+            // ── Photo viewer event listeners (T033, T034) ──
+            document.addEventListener('photoviewer:favorite', function (evt) {
+                var photo = evt.detail.photo;
+                toggleFavorite(photo);
+                rebuildPhotoLayer();
+                buildPhotoIndex();
+            });
+
+            document.addEventListener('photoviewer:caption-edit', function (evt) {
+                if (window.cloudData) {
+                    window.cloudData.savePhotoCaption(evt.detail.photoId, evt.detail.caption);
                 }
-            }
+            });
 
-            function openLightbox(index) {
-                if (filteredPhotos.length === 0) return;
-                if (index < 0) index = 0;
-                if (index >= filteredPhotos.length) index = filteredPhotos.length - 1;
-                lightboxIndex = index;
-                resetZoom();
-                var photo = filteredPhotos[index];
-
-                if (!lightboxOverlay) {
-                    lightboxOverlay = document.createElement('div');
-                    lightboxOverlay.className = 'lightbox-overlay';
-                    lightboxOverlay.innerHTML =
-                        '<button class="lightbox-close">&times;</button>' +
-                        '<button class="lightbox-favorite" style="display:none">&#9734;</button>' +
-                        '<button class="lightbox-nav lightbox-prev">&#8249;</button>' +
-                        '<div class="lightbox-media"></div>' +
-                        '<button class="lightbox-nav lightbox-next">&#8250;</button>' +
-                        '<div class="lightbox-zoom-controls">' +
-                            '<button class="zoom-btn zoom-out">&minus;</button>' +
-                            '<span class="zoom-level">1x</span>' +
-                            '<button class="zoom-btn zoom-in">+</button>' +
-                        '</div>' +
-                        '<div class="lightbox-info">' +
-                            '<div class="lightbox-caption-wrap">' +
-                                '<p class="lightbox-caption"></p>' +
-                                '<div class="caption-editor" style="display:none">' +
-                                    '<textarea class="caption-editor-input" rows="2" placeholder="Add a caption..."></textarea>' +
-                                '</div>' +
-                            '</div>' +
-                            '<p class="lightbox-date"></p>' +
-                            '<div class="lightbox-tags"></div>' +
-                            '<div class="tag-editor" style="display:none">' +
-                                '<div class="tag-editor-chips"></div>' +
-                                '<input class="tag-editor-input" type="text" placeholder="Add tag..." maxlength="50">' +
-                            '</div>' +
-                            '<a class="lightbox-link" target="_blank" rel="noopener noreferrer">View on Google Photos</a>' +
-                        '</div>';
-                    document.body.appendChild(lightboxOverlay);
-
-                    lightboxOverlay.querySelector('.lightbox-close').addEventListener('click', function (evt) {
-                        evt.stopPropagation();
-                        closeLightbox();
-                    });
-                    lightboxOverlay.querySelector('.lightbox-prev').addEventListener('click', function (evt) {
-                        evt.stopPropagation();
-                        openLightbox(lightboxIndex - 1);
-                    });
-                    lightboxOverlay.querySelector('.lightbox-next').addEventListener('click', function (evt) {
-                        evt.stopPropagation();
-                        openLightbox(lightboxIndex + 1);
-                    });
-                    lightboxOverlay.querySelector('.lightbox-favorite').addEventListener('click', function (evt) {
-                        evt.stopPropagation();
-                        if (lightboxIndex < 0 || lightboxIndex >= filteredPhotos.length) return;
-                        var photo = filteredPhotos[lightboxIndex];
-                        toggleFavorite(photo);
-                        var btn = lightboxOverlay.querySelector('.lightbox-favorite');
-                        var fav = isFavorite(photo);
-                        btn.innerHTML = fav ? '&#9733;' : '&#9734;';
-                        btn.classList.toggle('is-favorite', fav);
-                        rebuildPhotoLayer();
-                        buildPhotoIndex();
-                    });
-                    lightboxOverlay.addEventListener('click', function (evt) {
-                        if (evt.target === lightboxOverlay && !lbZoom._didDrag) closeLightbox();
-                        lbZoom._didDrag = false;
-                    });
-
-                    // ── Tag editor ──
-                    var tagEditorInput = lightboxOverlay.querySelector('.tag-editor-input');
-                    tagEditorInput.addEventListener('keydown', function (evt) {
-                        if (evt.key === 'Enter') {
-                            evt.preventDefault();
-                            var val = this.value.trim();
-                            if (!val) return;
-                            if (lightboxIndex < 0 || lightboxIndex >= filteredPhotos.length) return;
-                            var photo = filteredPhotos[lightboxIndex];
-                            var pid = window.cloudData.getPhotoId(photo);
-                            var current = window.cloudData.getEffectiveTags(pid, photo.tags).slice();
-                            if (current.indexOf(val) === -1) current.push(val);
-                            window.cloudData.savePhotoTags(pid, current);
-                            this.value = '';
-                            _renderTagEditorChips(photo);
-                            _renderLightboxTags(photo);
-                        }
-                    });
-                    tagEditorInput.addEventListener('click', function (evt) { evt.stopPropagation(); });
-
-                    function _renderTagEditorChips(photo) {
-                        var container = lightboxOverlay.querySelector('.tag-editor-chips');
-                        var pid = window.cloudData ? window.cloudData.getPhotoId(photo) : '';
-                        var tags = window.cloudData ? window.cloudData.getEffectiveTags(pid, photo.tags) : (photo.tags || []);
-                        var html = '';
-                        for (var i = 0; i < tags.length; i++) {
-                            html += '<span class="tag-chip">' + tags[i] + '<button class="tag-chip-remove" data-tag="' + tags[i] + '">&times;</button></span>';
-                        }
-                        container.innerHTML = html;
-                        // Wire remove buttons
-                        var removeBtns = container.querySelectorAll('.tag-chip-remove');
-                        for (var r = 0; r < removeBtns.length; r++) {
-                            removeBtns[r].addEventListener('click', function (evt) {
-                                evt.stopPropagation();
-                                var tagToRemove = this.getAttribute('data-tag');
-                                var current = window.cloudData.getEffectiveTags(pid, photo.tags).slice();
-                                var idx = current.indexOf(tagToRemove);
-                                if (idx !== -1) current.splice(idx, 1);
-                                window.cloudData.savePhotoTags(pid, current);
-                                _renderTagEditorChips(photo);
-                                _renderLightboxTags(photo);
-                            });
-                        }
-                    }
-
-                    function _renderLightboxTags(photo) {
-                        var tagsEl = lightboxOverlay.querySelector('.lightbox-tags');
-                        var pid = window.cloudData ? window.cloudData.getPhotoId(photo) : '';
-                        var tags = window.cloudData ? window.cloudData.getEffectiveTags(pid, photo.tags) : (photo.tags || []);
-                        if (tags && tags.length > 0) {
-                            var html = '';
-                            for (var t = 0; t < tags.length; t++) html += '<span class="lightbox-tag">' + tags[t] + '</span>';
-                            tagsEl.innerHTML = html;
-                            tagsEl.style.display = '';
-                        } else {
-                            tagsEl.innerHTML = '';
-                            tagsEl.style.display = 'none';
-                        }
-                    }
-
-                    // ── Caption editor ──
-                    var captionWrap = lightboxOverlay.querySelector('.lightbox-caption-wrap');
-                    var captionDisplay = lightboxOverlay.querySelector('.lightbox-caption');
-                    var captionEditorDiv = lightboxOverlay.querySelector('.caption-editor');
-                    var captionTextarea = lightboxOverlay.querySelector('.caption-editor-input');
-
-                    captionDisplay.addEventListener('click', function (evt) {
-                        evt.stopPropagation();
-                        if (!(window.firebaseAuth && window.firebaseAuth.isEditor)) return;
-                        captionDisplay.style.display = 'none';
-                        captionEditorDiv.style.display = '';
-                        captionTextarea.value = captionDisplay.textContent || '';
-                        captionTextarea.focus();
-                    });
-
-                    captionTextarea.addEventListener('click', function (evt) { evt.stopPropagation(); });
-
-                    function _saveCaptionAndClose() {
-                        var newCaption = captionTextarea.value.trim();
-                        if (lightboxIndex >= 0 && lightboxIndex < filteredPhotos.length) {
-                            var photo = filteredPhotos[lightboxIndex];
-                            var pid = window.cloudData.getPhotoId(photo);
-                            window.cloudData.savePhotoCaption(pid, newCaption);
-                            captionDisplay.textContent = newCaption;
-                            captionDisplay.style.display = newCaption ? '' : 'none';
-                        }
-                        captionEditorDiv.style.display = 'none';
-                        if (captionDisplay.textContent) captionDisplay.style.display = '';
-                    }
-
-                    captionTextarea.addEventListener('blur', _saveCaptionAndClose);
-                    captionTextarea.addEventListener('keydown', function (evt) {
-                        if (evt.key === 'Enter' && !evt.shiftKey) {
-                            evt.preventDefault();
-                            captionTextarea.blur();
-                        }
-                    });
-
-                    // ── Lightbox zoom/pan logic ──
-                    var mediaEl = lightboxOverlay.querySelector('.lightbox-media');
-                    var zoomControls = lightboxOverlay.querySelector('.lightbox-zoom-controls');
-                    var zoomLevelEl = lightboxOverlay.querySelector('.zoom-level');
-
-                    lbZoom._fadeTimer = null;
-                    function showZoomControls() {
-                        zoomControls.classList.add('visible');
-                        if (lbZoom._fadeTimer) clearTimeout(lbZoom._fadeTimer);
-                        lbZoom._fadeTimer = setTimeout(function () {
-                            if (lbZoom.scale <= 1) zoomControls.classList.remove('visible');
-                        }, 2000);
-                    }
-
-                    function applyTransform() {
-                        var content = mediaEl.querySelector('img, video');
-                        if (!content) return;
-                        content.style.transform = 'translate(' + lbZoom.translateX + 'px, ' + lbZoom.translateY + 'px) scale(' + lbZoom.scale + ')';
-                        content.style.transformOrigin = '0 0';
-                        zoomLevelEl.textContent = lbZoom.scale.toFixed(1) + 'x';
-                        mediaEl.classList.toggle('zoomed', lbZoom.scale > 1);
-                        showZoomControls();
-                    }
-
-                    function zoomAt(newScale, clientX, clientY) {
-                        var rect = mediaEl.getBoundingClientRect();
-                        var mx = clientX - rect.left;
-                        var my = clientY - rect.top;
-                        var prevScale = lbZoom.scale;
-                        newScale = Math.max(1, Math.min(5, newScale));
-                        var ratio = newScale / prevScale;
-                        lbZoom.translateX = mx - ratio * (mx - lbZoom.translateX);
-                        lbZoom.translateY = my - ratio * (my - lbZoom.translateY);
-                        lbZoom.scale = newScale;
-                        if (lbZoom.scale <= 1) { lbZoom.translateX = 0; lbZoom.translateY = 0; lbZoom.scale = 1; }
-                        applyTransform();
-                    }
-
-                    // Wheel zoom
-                    mediaEl.addEventListener('wheel', function (evt) {
-                        evt.preventDefault();
-                        var factor = evt.deltaY < 0 ? 1.15 : 1 / 1.15;
-                        zoomAt(lbZoom.scale * factor, evt.clientX, evt.clientY);
-                    }, { passive: false });
-
-                    // Double-click zoom toggle
-                    mediaEl.addEventListener('dblclick', function (evt) {
-                        evt.preventDefault();
-                        evt.stopPropagation();
-                        if (lbZoom.scale > 1.05) {
-                            lbZoom.scale = 1; lbZoom.translateX = 0; lbZoom.translateY = 0;
-                            applyTransform();
-                        } else {
-                            zoomAt(2.5, evt.clientX, evt.clientY);
-                        }
-                    });
-
-                    // Mouse drag pan
-                    var _dragStartX, _dragStartY, _dragTxStart, _dragTyStart;
-                    mediaEl.addEventListener('mousedown', function (evt) {
-                        if (lbZoom.scale <= 1 || evt.button !== 0) return;
-                        evt.preventDefault();
-                        lbZoom.isPanning = true;
-                        _dragStartX = evt.clientX; _dragStartY = evt.clientY;
-                        _dragTxStart = lbZoom.translateX; _dragTyStart = lbZoom.translateY;
-                    });
-                    document.addEventListener('mousemove', function (evt) {
-                        if (!lbZoom.isPanning) return;
-                        var dx = evt.clientX - _dragStartX;
-                        var dy = evt.clientY - _dragStartY;
-                        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) lbZoom._didDrag = true;
-                        lbZoom.translateX = _dragTxStart + dx;
-                        lbZoom.translateY = _dragTyStart + dy;
-                        applyTransform();
-                    });
-                    document.addEventListener('mouseup', function () {
-                        lbZoom.isPanning = false;
-                    });
-
-                    // Touch pinch-to-zoom and pan
-                    var _touchDist0, _touchScale0, _touchMid;
-                    mediaEl.addEventListener('touchstart', function (evt) {
-                        if (evt.touches.length === 2) {
-                            evt.preventDefault();
-                            lbZoom.isPinching = true;
-                            var dx = evt.touches[0].clientX - evt.touches[1].clientX;
-                            var dy = evt.touches[0].clientY - evt.touches[1].clientY;
-                            _touchDist0 = Math.sqrt(dx * dx + dy * dy);
-                            _touchScale0 = lbZoom.scale;
-                            _touchMid = {
-                                x: (evt.touches[0].clientX + evt.touches[1].clientX) / 2,
-                                y: (evt.touches[0].clientY + evt.touches[1].clientY) / 2
-                            };
-                        } else if (evt.touches.length === 1 && lbZoom.scale > 1) {
-                            lbZoom.isPanning = true;
-                            _dragStartX = evt.touches[0].clientX;
-                            _dragStartY = evt.touches[0].clientY;
-                            _dragTxStart = lbZoom.translateX;
-                            _dragTyStart = lbZoom.translateY;
-                        }
-                    }, { passive: false });
-                    mediaEl.addEventListener('touchmove', function (evt) {
-                        if (lbZoom.isPinching && evt.touches.length === 2) {
-                            evt.preventDefault();
-                            var dx = evt.touches[0].clientX - evt.touches[1].clientX;
-                            var dy = evt.touches[0].clientY - evt.touches[1].clientY;
-                            var dist = Math.sqrt(dx * dx + dy * dy);
-                            var newScale = _touchScale0 * (dist / _touchDist0);
-                            zoomAt(newScale, _touchMid.x, _touchMid.y);
-                        } else if (lbZoom.isPanning && evt.touches.length === 1 && lbZoom.scale > 1) {
-                            evt.preventDefault();
-                            lbZoom.translateX = _dragTxStart + (evt.touches[0].clientX - _dragStartX);
-                            lbZoom.translateY = _dragTyStart + (evt.touches[0].clientY - _dragStartY);
-                            applyTransform();
-                        }
-                    }, { passive: false });
-                    mediaEl.addEventListener('touchend', function () {
-                        lbZoom.isPinching = false;
-                        lbZoom.isPanning = false;
-                    });
-
-                    // Zoom button handlers
-                    lightboxOverlay.querySelector('.zoom-in').addEventListener('click', function (evt) {
-                        evt.stopPropagation();
-                        var rect = mediaEl.getBoundingClientRect();
-                        zoomAt(lbZoom.scale * 1.4, rect.left + rect.width / 2, rect.top + rect.height / 2);
-                    });
-                    lightboxOverlay.querySelector('.zoom-out').addEventListener('click', function (evt) {
-                        evt.stopPropagation();
-                        var rect = mediaEl.getBoundingClientRect();
-                        zoomAt(lbZoom.scale / 1.4, rect.left + rect.width / 2, rect.top + rect.height / 2);
-                    });
+            document.addEventListener('photoviewer:tag-edit', function (evt) {
+                if (window.cloudData) {
+                    window.cloudData.savePhotoTags(evt.detail.photoId, evt.detail.tags);
                 }
-
-                // Populate media
-                var mediaContainer = lightboxOverlay.querySelector('.lightbox-media');
-                if (photo.type === 'video') {
-                    if (photo.web_url) {
-                        mediaContainer.innerHTML = '<iframe class="lightbox-video-iframe" src="' + photo.web_url + '" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
-                    } else {
-                        mediaContainer.innerHTML = '<video controls autoplay><source src="' + photo.url + '"></video>';
-                    }
-                } else {
-                    // Progressive loading: show thumbnail immediately, swap to high-res when loaded
-                    var img = document.createElement('img');
-                    img.src = photo.thumbnail;
-                    img.alt = photo.caption || 'Photo';
-                    img.className = 'lightbox-img loading';
-                    img.onerror = function () {
-                        this.onerror = null;
-                        this.style.background = '#2a2a2e';
-                        this.style.minWidth = '300px';
-                        this.style.minHeight = '200px';
-                        this.classList.remove('loading');
-                        this.alt = 'Photo unavailable';
-                    };
-                    mediaContainer.innerHTML = '';
-                    mediaContainer.appendChild(img);
-
-                    if (photo.web_url) {
-                        var hiRes = new Image();
-                        hiRes.onload = function () {
-                            if (img.parentNode) {
-                                img.src = hiRes.src;
-                                img.classList.remove('loading');
-                            }
-                        };
-                        hiRes.onerror = function () {
-                            img.classList.remove('loading');
-                        };
-                        hiRes.src = photo.web_url;
-                    } else {
-                        img.classList.remove('loading');
-                    }
-                }
-
-                // Populate info
-                // Cloud-over-static merge for caption and tags
-                var _lbPhotoId = window.cloudData ? window.cloudData.getPhotoId(photo) : '';
-                var _lbCaption = window.cloudData ? window.cloudData.getEffectiveCaption(_lbPhotoId, photo.caption) : (photo.caption || '');
-                var _lbTags = window.cloudData ? window.cloudData.getEffectiveTags(_lbPhotoId, photo.tags) : (photo.tags || []);
-
-                var captionEl = lightboxOverlay.querySelector('.lightbox-caption');
-                captionEl.textContent = _lbCaption;
-                captionEl.style.display = _lbCaption ? '' : 'none';
-
-                var dateEl = lightboxOverlay.querySelector('.lightbox-date');
-                dateEl.textContent = photo.date || '';
-                dateEl.style.display = photo.date ? '' : 'none';
-
-                var tagsEl = lightboxOverlay.querySelector('.lightbox-tags');
-                if (_lbTags && _lbTags.length > 0) {
-                    var tagsHtml = '';
-                    for (var t = 0; t < _lbTags.length; t++) {
-                        tagsHtml += '<span class="lightbox-tag">' + _lbTags[t] + '</span>';
-                    }
-                    tagsEl.innerHTML = tagsHtml;
-                    tagsEl.style.display = '';
-                } else {
-                    tagsEl.innerHTML = '';
-                    tagsEl.style.display = 'none';
-                }
-
-                // Show/hide editor controls based on auth state
-                var _isEditor = !!(window.firebaseAuth && window.firebaseAuth.isEditor);
-                var tagEditorEl = lightboxOverlay.querySelector('.tag-editor');
-                tagEditorEl.style.display = _isEditor ? '' : 'none';
-                if (_isEditor && window.cloudData) {
-                    _renderTagEditorChips(photo);
-                }
-                var captionDisplayEl = lightboxOverlay.querySelector('.lightbox-caption');
-                captionDisplayEl.style.cursor = _isEditor ? 'pointer' : '';
-                // Reset caption editor to hidden (display mode)
-                var captionEdDiv = lightboxOverlay.querySelector('.caption-editor');
-                captionEdDiv.style.display = 'none';
-                if (!_lbCaption && _isEditor) {
-                    captionDisplayEl.textContent = '';
-                    captionDisplayEl.setAttribute('data-placeholder', 'Click to add caption...');
-                    captionDisplayEl.classList.add('caption-placeholder');
-                    captionDisplayEl.style.display = '';
-                } else {
-                    captionDisplayEl.classList.remove('caption-placeholder');
-                    captionDisplayEl.removeAttribute('data-placeholder');
-                    captionDisplayEl.style.display = _lbCaption ? '' : 'none';
-                }
-
-                var linkEl = lightboxOverlay.querySelector('.lightbox-link');
-                if (photo.google_photos_url) {
-                    linkEl.href = photo.google_photos_url;
-                    linkEl.style.display = '';
-                } else {
-                    linkEl.style.display = 'none';
-                }
-
-                // Arrow visibility
-                lightboxOverlay.querySelector('.lightbox-prev').style.display = index <= 0 ? 'none' : '';
-                lightboxOverlay.querySelector('.lightbox-next').style.display = index >= filteredPhotos.length - 1 ? 'none' : '';
-
-                lightboxOverlay.style.display = 'flex';
-
-                // Update favorite star state
-                var favBtn = lightboxOverlay.querySelector('.lightbox-favorite');
-                if (favBtn) {
-                    var fav = isFavorite(photo);
-                    favBtn.innerHTML = fav ? '&#9733;' : '&#9734;';
-                    favBtn.classList.toggle('is-favorite', fav);
-                }
-
-                // Preload adjacent high-res images (fall back to thumbnail if no web_url)
-                if (index > 0 && filteredPhotos[index - 1].type !== 'video') {
-                    new Image().src = filteredPhotos[index - 1].web_url || filteredPhotos[index - 1].thumbnail;
-                }
-                if (index < filteredPhotos.length - 1 && filteredPhotos[index + 1].type !== 'video') {
-                    new Image().src = filteredPhotos[index + 1].web_url || filteredPhotos[index + 1].thumbnail;
-                }
-            }
-
-            function closeLightbox() {
-                if (lightboxOverlay) lightboxOverlay.style.display = 'none';
-                lightboxIndex = -1;
-            }
-
-            document.addEventListener('keydown', function (evt) {
-                if (lightboxIndex < 0) return;
-                if (evt.key === 'Escape') closeLightbox();
-                else if (evt.key === 'ArrowLeft') openLightbox(lightboxIndex - 1);
-                else if (evt.key === 'ArrowRight') openLightbox(lightboxIndex + 1);
             });
 
             function buildPhotoIndex() {
@@ -686,7 +240,8 @@
                 var key = photo.url + '|' + photo.lat + '|' + photo.lng;
                 var index = photoIndex.hasOwnProperty(key) ? photoIndex[key] : -1;
                 if (index >= 0) {
-                    openLightbox(index);
+                    var srcEl = e.layer._icon ? e.layer._icon.querySelector('img') : null;
+                    window.photoViewer.open(filteredPhotos, index, srcEl);
                 }
             }
 
@@ -953,7 +508,7 @@
                     entryEls[e].addEventListener('click', onFeedEntryClick);
                 }
 
-                // Wire thumbnail click handlers (open lightbox)
+                // Wire thumbnail click handlers (open photo viewer)
                 var thumbEls = feedEntries.querySelectorAll('.feed-thumbnail');
                 for (var th = 0; th < thumbEls.length; th++) {
                     thumbEls[th].addEventListener('click', onFeedThumbnailClick);
@@ -1029,11 +584,25 @@
                 var lng = evt.target.getAttribute('data-photo-lng');
                 if (!url) return;
 
-                // Find the photo in filteredPhotos to get the correct lightbox index
+                // Context-aware: navigate within that day's photos
+                var entryEl = evt.target.closest('.feed-entry');
+                var date = entryEl ? entryEl.getAttribute('data-date') : null;
+                if (date && dateIndex[date]) {
+                    var dayPhotos = dateIndex[date].photos;
+                    var dayIdx = -1;
+                    for (var i = 0; i < dayPhotos.length; i++) {
+                        if (dayPhotos[i].url === url) { dayIdx = i; break; }
+                    }
+                    if (dayIdx >= 0) {
+                        window.photoViewer.open(dayPhotos, dayIdx, evt.target);
+                        return;
+                    }
+                }
+                // Fallback: open in full filteredPhotos set
                 var key = url + '|' + lat + '|' + lng;
                 var idx = photoIndex.hasOwnProperty(key) ? photoIndex[key] : -1;
                 if (idx >= 0) {
-                    openLightbox(idx);
+                    window.photoViewer.open(filteredPhotos, idx, evt.target);
                 }
             }
 
@@ -1786,7 +1355,7 @@
             // This runs for all visitors (edits are publicly readable).
             if (window.cloudData) {
                 window.cloudData.loadPhotoEdits().then(function () {
-                    // Popups and lightbox will use effective values on next open.
+                    // Popups and photo viewer will use effective values on next open.
                 });
                 // Load daily narratives and render them in feed entries
                 window.cloudData.loadDailyNarratives().then(function () {
