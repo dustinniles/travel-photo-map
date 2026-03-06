@@ -4,13 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Travel Photo Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/leaflet.css">
     <link rel="stylesheet" href="css/Leaflet.Photo.css">
     <link rel="stylesheet" href="css/map.css">
     <link rel="stylesheet" href="css/photo-viewer.css">
     <link rel="stylesheet" href="css/photo-wall.css">
+    <link rel="stylesheet" href="css/landing-page.css">
 </head>
 <body>
+    <!-- Landing page overlay -->
+    <div id="landing-page">
+        <div class="landing-intro">
+            <div class="landing-intro__stat"><em>42</em> days</div>
+            <div class="landing-intro__stat"><em>8</em> regions</div>
+            <div class="landing-intro__stat"><em>5</em> countries</div>
+            <div class="landing-intro__hint">tap or scroll to continue</div>
+        </div>
+        <div class="landing-grid-wrap">
+            <div class="landing-grid"></div>
+            <div class="landing-explore-wrap">
+                <button class="landing-explore-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    Explore the Map
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="map"></div>
 
     <!-- Feed sidebar -->
@@ -21,8 +44,13 @@
         <div class="feed-drag-handle"></div>
         <div class="feed-header">
             <h3>Trip Feed</h3>
+            <button class="region-toggle" id="region-toggle" title="Trip Legs">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </button>
             <button class="feed-close" id="feed-close">&times;</button>
         </div>
+        <div class="region-grid hidden" id="region-grid"></div>
+        <div class="itinerary-panel hidden" id="itinerary-panel"></div>
         <div class="feed-entries" id="feed-entries"></div>
     </div>
 
@@ -58,6 +86,8 @@
     <script src="js/route-builder.js"></script>
     <script src="js/photo-viewer.js"></script>
     <script src="js/photo-wall.js"></script>
+    <script src="js/region-nav.js"></script>
+    <script src="js/landing-page.js"></script>
     <script>
         (function () {
             var map = L.map('map').setView([20, 0], 2);
@@ -314,11 +344,10 @@
                     ViewportSampler.update();
                 }
 
-                // Favorites: separate non-clustered layer (always visible, slightly larger)
+                // Favorites: separate non-clustered layer (always visible, fixed tier-0 size)
                 if (favoritePhotos.length > 0) {
-                    var favSize = currentIconSize + 10;
                     favoritesLayer = L.photo(null, {
-                        icon: { iconSize: [favSize, favSize] }
+                        icon: { frameSize: 80, stemHeight: 0, tier: 0 }
                     });
                     favoritesLayer.add(favoritePhotos);
                     favoritesLayer.on('click', onPhotoClick);
@@ -831,14 +860,16 @@
                 }
             });
 
-            // Load trip segments and manifest together
+            // Load trip segments, manifest, and itinerary together
             Promise.all([
                 fetch('data/trip_segments.json').then(function (r) { return r.ok ? r.json() : []; }),
-                fetch('data/manifest.json').then(function (r) { if (!r.ok) throw new Error('Failed to load manifest'); return r.json(); })
+                fetch('data/manifest.json').then(function (r) { if (!r.ok) throw new Error('Failed to load manifest'); return r.json(); }),
+                fetch('data/itinerary.json').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
             ])
                 .then(function (results) {
                     tripSegments = results[0] || [];
                     var photos = results[1];
+                    var itineraryData = results[2];
 
                     if (!photos || photos.length === 0) {
                         showEmptyState();
@@ -876,11 +907,24 @@
                     rebuildPhotoLayer();
                     buildPhotoIndex();
 
-                    // Build and show the feed sidebar
+                    // Build the feed sidebar (hidden initially if landing page active)
                     buildFeed();
-                    feedToggle.style.display = '';
-                    feedSidebar.classList.remove('hidden');
-                    feedToggle.style.display = 'none'; // hidden while feed is open
+                    var landingPageEl = document.getElementById('landing-page');
+                    var landingActive = landingPageEl && landingPageEl.style.display !== 'none';
+
+                    if (landingActive) {
+                        // Keep sidebar and photo wall hidden until landing page is dismissed
+                        feedSidebar.classList.add('hidden');
+                        feedToggle.style.display = 'none';
+                        var wallPanel = document.getElementById('photo-wall-panel');
+                        if (wallPanel) wallPanel.style.visibility = 'hidden';
+                        var reopenBtn = document.getElementById('photo-wall-reopen-btn');
+                        if (reopenBtn) reopenBtn.style.visibility = 'hidden';
+                    } else {
+                        feedToggle.style.display = '';
+                        feedSidebar.classList.remove('hidden');
+                        feedToggle.style.display = 'none'; // hidden while feed is open
+                    }
                     // On mobile, start in collapsed state
                     if (window.innerWidth <= 768) {
                         feedSidebar.classList.add('feed-sheet-collapsed');
@@ -919,6 +963,57 @@
                                 }, 200);
                             });
                         }
+                    }
+
+                    // Initialize region navigation
+                    if (window.initRegionNav) {
+                        window.initRegionNav({
+                            map: map,
+                            allPhotos: allPhotos,
+                            tripSegments: tripSegments,
+                            itineraryData: itineraryData,
+                            gridEl: document.getElementById('region-grid'),
+                            itineraryEl: document.getElementById('itinerary-panel'),
+                            feedEntries: feedEntries,
+                            toggleBtn: document.getElementById('region-toggle'),
+                            rebuildPhotoLayer: rebuildPhotoLayer,
+                            buildSmartRoutes: buildSmartRoutes,
+                            photoWall: window.photoWall,
+                            travelRouteLayerRef: { layer: travelRouteLayer },
+                            filteredPhotos: filteredPhotos
+                        });
+                    }
+
+                    // Initialize landing page
+                    if (window.initLandingPage && landingActive) {
+                        window.initLandingPage({
+                            itineraryData: itineraryData,
+                            allPhotos: allPhotos,
+                            tripSegments: tripSegments,
+                            map: map,
+                            onEnterMap: function (opts) {
+                                // Show feed sidebar and photo wall
+                                feedSidebar.classList.remove('hidden');
+                                feedToggle.style.display = 'none';
+                                var wallPanel = document.getElementById('photo-wall-panel');
+                                if (wallPanel) wallPanel.style.visibility = '';
+                                var reopenBtn = document.getElementById('photo-wall-reopen-btn');
+                                if (reopenBtn) reopenBtn.style.visibility = '';
+                                // On mobile, start collapsed
+                                if (window.innerWidth <= 768) {
+                                    feedSidebar.classList.add('feed-sheet-collapsed');
+                                }
+                                // Invalidate map size after landing page hides
+                                setTimeout(function () {
+                                    map.invalidateSize();
+                                    if (opts && opts.region) {
+                                        // Fly to the selected region
+                                        var zoomLevel = opts.region.jsonRegions && opts.region.jsonRegions.length > 1 ? 7 : 10;
+                                        map.flyTo([opts.region.center.lat, opts.region.center.lng], zoomLevel, { duration: 0.8 });
+                                    }
+                                }, 100);
+                            }
+                        });
                     }
 
                     // Build unique sorted dates

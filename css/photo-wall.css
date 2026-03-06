@@ -15,12 +15,12 @@
     --color-border: rgba(255, 255, 255, 0.08);
 
     /* Font sizes */
-    --font-xs: 11px;
-    --font-sm: 12px;
-    --font-base: 13px;
-    --font-md: 15px;
-    --font-lg: 16px;
-    --font-xl: 20px;
+    --font-xs: 12px;
+    --font-sm: 13px;
+    --font-base: 15px;
+    --font-md: 17px;
+    --font-lg: 19px;
+    --font-xl: 24px;
 
     /* Transitions */
     --duration-fast: 150ms;

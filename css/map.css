@@ -2,7 +2,7 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 #map {
@@ -635,9 +635,7 @@ html, body {
     font-size: 14px;
 }
 
-/* Trip Feed hidden — superseded by Photo Wall (re-enable by removing these rules) */
-.feed-sidebar,
-.feed-toggle { display: none !important; }
+/* Trip Feed — re-enabled for region navigation */
 
 /* ──── Feed Sidebar (Desktop: right drawer) ──── */
 .feed-sidebar {
@@ -741,6 +739,7 @@ html, body {
     padding: 4px 0;
     pointer-events: none;
 }
+.feed-entries.hidden { display: none; }
 
 .feed-entries::-webkit-scrollbar {
     width: 6px;
@@ -1098,4 +1097,178 @@ html, body {
 @keyframes pendingPulse {
     0%, 100% { opacity: 0.5; }
     50% { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Region Navigation — Grid + Itinerary Panel
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Toggle button in feed header */
+.region-toggle {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: auto;
+    margin-right: 4px;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+}
+.region-toggle:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+}
+
+/* ── Region Grid ── */
+.region-grid {
+    padding: 8px;
+}
+.region-grid.hidden { display: none; }
+
+.region-grid-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.region-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    text-align: center;
+    min-height: 56px;
+    font-family: inherit;
+}
+.region-panel:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.25);
+    transform: translateY(-1px);
+}
+.region-panel:active {
+    transform: translateY(0);
+    background: rgba(255,255,255,0.18);
+}
+.region-panel--disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+}
+
+.region-panel-label {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+.region-panel-dates {
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+/* ── Itinerary Panel ── */
+.itinerary-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.itinerary-panel.hidden { display: none; }
+
+.itinerary-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+}
+
+.itinerary-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: #82b1ff;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 0;
+    margin-bottom: 4px;
+    font-family: inherit;
+    transition: color 0.2s;
+}
+.itinerary-back:hover { color: #b0d4ff; }
+
+.itinerary-title {
+    margin: 0 0 2px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.itinerary-dates {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+}
+
+.itinerary-days {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+.itinerary-day {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.itinerary-day:last-child { border-bottom: none; }
+
+.itinerary-day-date {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 3px;
+}
+
+.itinerary-day-notes {
+    font-size: 13px;
+    line-height: 1.45;
+    color: #ddd;
+    word-wrap: break-word;
+}
+
+.itinerary-day-notes--empty {
+    font-style: italic;
+    color: rgba(255,255,255,0.3);
+    font-size: 12px;
+}
+
+/* ── Mobile: region grid as full-screen overlay ── */
+@media (max-width: 768px) {
+    .region-grid--overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: 2000;
+        background: rgba(20, 20, 28, 0.96);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+    }
+    .region-grid--overlay .region-grid-inner {
+        max-width: 360px;
+        width: 100%;
+    }
+    .region-grid--overlay .region-panel {
+        min-height: 64px;
+        padding: 14px 10px;
+    }
 }

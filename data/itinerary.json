@@ -1,0 +1,132 @@
+{
+  "trip": "Europe 2026",
+  "dates": "2026-01-26 to 2026-03-09",
+  "regions": [
+    {
+      "name": "UK - London",
+      "lat": 51.5074,
+      "lng": -0.1278,
+      "summary": "",
+      "heroPhoto": "",
+      "days": [
+        { "date": "2026-01-26", "notes": "Cancelled inbound flight due to sleet" },
+        { "date": "2026-01-27", "notes": "Shop for winter gear + bag for Rachel. Red eye RDU-LHR, flew out on AA 174 at 8:45 PM" },
+        { "date": "2026-01-28", "notes": "Landed LHR 9:20 AM. Rachel, Sarah, Brian split — Sarah picked up posters, B/R checked in to hotel near ExCel/Docklands. Festival of Genomics at ExCeL. Exhausted, then delirious. Networking" },
+        { "date": "2026-01-29", "notes": "Networking + talks + posters @ FoGo. Met Jan-Phillip Molla(?). Connected with Eleni (Lifebit), Rachael De Vries (novoSTAR/Ole Winther lab)" }
+      ]
+    },
+    {
+      "name": "Copenhagen (Visit 1)",
+      "lat": 55.6761,
+      "lng": 12.5683,
+      "summary": "",
+      "heroPhoto": "",
+      "days": [
+        { "date": "2026-01-30", "notes": "Fly to Copenhagen from LGW. Meet Luis @ Vestamager. Sent cold emails to CPH contacts. Ashnikko concert in evening" },
+        { "date": "2026-01-31", "notes": "Relax. Freezing (-20C + wind). Hot baths on waterfront in eve" },
+        { "date": "2026-02-01", "notes": "Sarah leaves. See city" },
+        { "date": "2026-02-02", "notes": "Coffee with Rachael De Vries near Nørreport (before 2pm)" },
+        { "date": "2026-02-03", "notes": "Train CPH central → Heidelberg (8:08 AM–6:23 PM). Breakfast of bread + cheese next to station, long ride w/ delays via Hamburg, Frankfurt, Mannheim" }
+      ]
+    },
+    {
+      "name": "Heidelberg",
+      "lat": 49.3988,
+      "lng": 8.6724,
+      "summary": "",
+      "heroPhoto": "",
+      "days": [
+        { "date": "2026-02-03", "notes": "Arrived Heidelberg. Picked up by Günther + met family" },
+        { "date": "2026-02-04", "notes": "EMBL w/ Bishoy" },
+        { "date": "2026-02-05", "notes": "Town + University library for working. Foggy" },
+        { "date": "2026-02-06", "notes": "Breakfast w/ Bishoy. Meetings @ DKFZ. Drive to Bürgstadt w/ Günther, walk Burg + Miltenberg, eat @ The Giant(?)" },
+        { "date": "2026-02-07", "notes": "Walk Bürgstadt. Val, Greta, Diana arrive. Drive to Gerolzahn, Reudental, tried Schneeball (snowball pastry). Drive home to Heidelberg in eve" },
+        { "date": "2026-02-08", "notes": "Relaxed day @ Grimm household. Files, ancestry tree, delayed Heidelberg walk for Valentin, walked Philosophenweg trail" }
+      ]
+    },
+    {
+      "name": "Munich",
+      "lat": 48.1351,
+      "lng": 11.5820,
+      "summary": "",
+      "heroPhoto": "",
+      "days": [
+        { "date": "2026-02-09", "notes": "Train Heidelberg → München (9:13 AM–12:10 PM). Staying with Aliona and Nick. Made gumbo for dinner, settled in on foldout couch" },
+        { "date": "2026-02-10", "notes": "Rachel and Brian into the city for remote work and sightseeing — Karlsplatz, Maxvorstadt. Worked out of Lost Weekend coffee shop. Dinner with Anne-Sophie Pipen, Canadian expat postdoc (Aliona connection) re: Munich life and immigration" },
+        { "date": "2026-02-11", "notes": "Similar day. Cleaned Aliona + Nick's place while Rachel worked on paper and remote job application. Applied late to Fran's A-SOuRCCE postdoc at BRIC Copenhagen" },
+        { "date": "2026-02-12", "notes": "Early commute (~1 hr) to Helmholtz Munich to meet Matthias Heinig (PI) and students — hadn't had a native English speaker visit in a long time. Rainy, dreary return commute. Walked toward city center, hopped a tram, got off in a nice area, walked several miles back with photos and döner. Chatted with Aliona + Nick in evening" },
+        { "date": "2026-02-13", "notes": "Train München → Praha (~11 AM–5:30 PM). Met Ammi and Lid at Airbnb near Vyšehrad/Pankrác. Subway to Vietnamese restaurant for dinner" }
+      ]
+    },
+    {
+      "name": "Prague",
+      "lat": 50.0755,
+      "lng": 14.4378,
+      "summary": "",
+      "heroPhoto": "",
+      "days": [
+        { "date": "2026-02-14", "notes": "Náplavka farmers market — mulled wine, halušky, other local favorites. Walked around the city: Vyšehrad, Old Town, Charles Bridge, Malá Strana, Prague Castle, Petřín Hill. 72-hour Lítačka pass. Porcelain pricing ahead of Meissen" },
+        { "date": "2026-02-15", "notes": "Prague with Ammi and Lid" }
+      ]
+    },
+    {
+      "name": "Dresden / Meißen",
+      "lat": 51.0504,
+      "lng": 13.7373,
+      "summary": "",
+      "heroPhoto": "",
+      "days": [
+        { "date": "2026-02-16", "notes": "Train Praha → Dresden (12:31–2:50 PM, direct). Stayed at Hotel Friedrichstadt" },
+        { "date": "2026-02-17", "notes": "Dresden sightseeing (Zwinger, Frauenkirche). S-Bahn to Meißen — grandmother's streets, Markt, porcelain shops, Manufactory, Cathedral hilltop. Train to Berlin in evening" }
+      ]
+    },
+    {
+      "name": "Berlin",
+      "lat": 52.5200,
+      "lng": 13.4050,
+      "summary": "",
+      "heroPhoto": "",
+      "days": [
+        { "date": "2026-02-17", "notes": "Arrived Berlin evening. Kindred rental in Kreuzberg" },
+        { "date": "2026-02-18", "notes": "Explored Kreuzberg. Shopped for roller bag/carry-on (needed more luggage capacity)" }
+      ]
+    },
+    {
+      "name": "Hamburg",
+      "lat": 53.5511,
+      "lng": 9.9937,
+      "summary": "",
+      "heroPhoto": "",
+      "days": [
+        { "date": "2026-02-19", "notes": "Train Berlin → Hamburg. Thrift stores in Schanzenviertel (2nd Fit, Vintage Revivals, Pick N Weight)" }
+      ]
+    },
+    {
+      "name": "Copenhagen (Visit 2)",
+      "lat": 55.6761,
+      "lng": 12.5683,
+      "summary": "",
+      "heroPhoto": "",
+      "days": [
+        { "date": "2026-02-20", "notes": "Train Hamburg → Copenhagen. Second longer stay with Ammi and Lid" },
+        { "date": "2026-02-21", "notes": "Working from BII" },
+        { "date": "2026-02-22", "notes": "" },
+        { "date": "2026-02-23", "notes": "Meeting with Ole Winther @ Biocenter. Emailed Tune Pers, Jordi Merino, Ana Cvejic" },
+        { "date": "2026-02-24", "notes": "Networking at KU/CBMR. Met Din Selmanovic (Pers Group postdoc)" },
+        { "date": "2026-02-25", "notes": "" },
+        { "date": "2026-02-26", "notes": "" },
+        { "date": "2026-02-27", "notes": "" },
+        { "date": "2026-02-28", "notes": "" },
+        { "date": "2026-03-01", "notes": "" },
+        { "date": "2026-03-02", "notes": "" },
+        { "date": "2026-03-03", "notes": "" },
+        { "date": "2026-03-04", "notes": "" },
+        { "date": "2026-03-05", "notes": "" },
+        { "date": "2026-03-06", "notes": "" },
+        { "date": "2026-03-07", "notes": "" },
+        { "date": "2026-03-08", "notes": "" },
+        { "date": "2026-03-09", "notes": "Return: CPH → LHR → RDU" }
+      ]
+    }
+  ]
+}
