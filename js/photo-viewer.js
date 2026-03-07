@@ -237,6 +237,9 @@
         // Stop video
         var vid = $media.querySelector('video');
         if (vid) { vid.pause(); vid.removeAttribute('src'); vid.load(); }
+        // Stop iframe (Google Drive embed)
+        var ifr = $media.querySelector('iframe');
+        if (ifr) { ifr.src = 'about:blank'; }
 
         $ov.style.display = 'none';
         $ov.classList.remove('pv-closing', 'pv-anim', 'pv-open', 'pv-fade', 'pv-controls-visible');
@@ -313,6 +316,7 @@
     function ptrDown(e) {
         if (!S.open) return;
         if (e.target.closest('.pv-ctrl')) return;
+        if (e.target.tagName === 'IFRAME') return;
         e.preventDefault();
 
         try { $wrap.setPointerCapture(e.pointerId); } catch (_) {}
@@ -506,25 +510,58 @@
     }
 
     function renderVideo(p) {
-        var old = $media.querySelector('video');
-        if (old) { old.pause(); old.removeAttribute('src'); old.load(); }
+        var old = $media.querySelector('iframe');
+        if (old) { old.src = 'about:blank'; }
 
-        var v = document.createElement('video');
-        v.className = 'pv-video';
-        v.controls = true;
-        v.playsInline = true;
-        v.preload = 'none';
-        v.poster = p.thumbnail;
-        v.src = p.web_url || p.url;
-        v.onerror = function () { errPlaceholder(); };
+        if (!p.web_url) { errPlaceholder('video'); return; }
+
+        // 16:9 wrapper with thumbnail background
+        var wrap = document.createElement('div');
+        wrap.className = 'pv-video-wrap';
+        if (p.thumbnail) {
+            wrap.style.backgroundImage = 'url(' + p.thumbnail + ')';
+        }
+        // Force 16:9 aspect ratio via padding trick as fallback
+        wrap.style.aspectRatio = '16 / 9';
+
+        // Loading spinner
+        var spinner = document.createElement('div');
+        spinner.className = 'pv-video-spinner';
+        wrap.appendChild(spinner);
+
+        // Iframe
+        var iframe = document.createElement('iframe');
+        iframe.className = 'pv-iframe';
+        iframe.src = p.web_url;
+        iframe.allow = 'autoplay; encrypted-media';
+        iframe.allowFullscreen = true;
+        iframe.setAttribute('frameborder', '0');
+
+        var loadTimer = setTimeout(function () { errPlaceholder('video'); }, 15000);
+        iframe.onload = function () {
+            clearTimeout(loadTimer);
+            wrap.classList.add('pv-video-loaded');
+        };
+        iframe.onerror = function () { clearTimeout(loadTimer); errPlaceholder('video'); };
+
+        wrap.appendChild(iframe);
+
+        // Edge-zone swipe overlays for touch navigation
+        var zones = ['left', 'right', 'top'];
+        for (var z = 0; z < zones.length; z++) {
+            var zone = document.createElement('div');
+            zone.className = 'pv-swipe-zone pv-swipe-zone--' + zones[z];
+            wrap.appendChild(zone);
+        }
 
         $media.innerHTML = '';
-        $media.appendChild(v);
+        $media.appendChild(wrap);
         S.loaded = true;
     }
 
-    function errPlaceholder() {
-        $media.innerHTML = '<div class="pv-error">Photo unavailable</div>';
+    function errPlaceholder(type) {
+        var msg = type === 'video' ? 'Video unavailable' : 'Photo unavailable';
+        $media.innerHTML = '<div class="pv-error">' + msg + '</div>';
     }
 
     // ── Preloading (T025, T026, T030) ──

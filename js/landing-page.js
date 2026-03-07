@@ -253,7 +253,15 @@
         } else {
             photoHtml = '<div class="detail-photos-grid">';
             for (var p = 0; p < displayed; p++) {
-                photoHtml += '<img src="' + photos[p].thumbnail + '" alt="" loading="lazy">';
+                if (photos[p].type === 'video') {
+                    photoHtml += '<div style="position:relative;display:inline-block">' +
+                        '<img src="' + photos[p].thumbnail + '" alt="" loading="lazy">' +
+                        '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.2);pointer-events:none">' +
+                            '<span style="color:rgba(255,255,255,0.9);font-size:24px;text-shadow:0 1px 4px rgba(0,0,0,0.6)">\u25B6</span>' +
+                        '</div></div>';
+                } else {
+                    photoHtml += '<img src="' + photos[p].thumbnail + '" alt="" loading="lazy">';
+                }
             }
             photoHtml += '</div>';
             if (photos.length > MAX_THUMBNAILS) {
