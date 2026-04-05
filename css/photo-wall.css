@@ -107,82 +107,24 @@
 }
 
 /* ── Drag Handle ────────────────────────────────────────────────────── */
+/* Hidden visually — drag events still fire but the row takes no space.
+   The chevron indicator lives on the collapse button in the header instead. */
 .photo-wall-handle {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 32px;
-    padding: 6px 0 4px;
-    cursor: grab;
+    height: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
     flex-shrink: 0;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
 }
 
-.photo-wall-handle:active {
-    cursor: grabbing;
-}
-
-/* Chevron arrow — replaces the drag grip bar */
-.photo-wall-handle-bar {
-    width: 20px;
-    height: 20px;
-    position: relative;
-    background: none;
-}
-
-.photo-wall-handle-bar::before,
-.photo-wall-handle-bar::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 10px;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.45);
-    border-radius: 1px;
-    transition: background 200ms, transform 200ms;
-}
-
-/* Left arm of the chevron (↑) */
-.photo-wall-handle-bar::before {
-    left: 0;
-    transform: translateY(-50%) rotate(-45deg);
-    transform-origin: right center;
-}
-
-/* Right arm of the chevron (↑) */
-.photo-wall-handle-bar::after {
-    right: 0;
-    transform: translateY(-50%) rotate(45deg);
-    transform-origin: left center;
-}
-
-.photo-wall-handle:hover .photo-wall-handle-bar::before,
-.photo-wall-handle:hover .photo-wall-handle-bar::after,
-.photo-wall-handle:active .photo-wall-handle-bar::before,
-.photo-wall-handle:active .photo-wall-handle-bar::after {
-    background: rgba(255, 255, 255, 0.7);
-}
-
-/* When expanded to half or full, flip chevron to point down (↓) */
-.photo-wall-panel--half .photo-wall-handle-bar::before,
-.photo-wall-panel--full .photo-wall-handle-bar::before {
-    transform: translateY(-50%) rotate(45deg);
-    transform-origin: right center;
-}
-
-.photo-wall-panel--half .photo-wall-handle-bar::after,
-.photo-wall-panel--full .photo-wall-handle-bar::after {
-    transform: translateY(-50%) rotate(-45deg);
-    transform-origin: left center;
-}
-
 /* ── Header ─────────────────────────────────────────────────────────── */
 .photo-wall-header {
     display: flex;
     align-items: center;
-    padding: 0 16px 10px 16px;
+    padding: 10px 16px;
     gap: 8px;
     flex-shrink: 0;
     min-height: var(--wall-header-height);
@@ -216,18 +158,56 @@
     border: 1px solid var(--wall-border);
     color: var(--wall-text-muted);
     cursor: pointer;
-    font-size: var(--font-base);
+    font-size: 0; /* hide the text glyph — chevron drawn via ::before/::after */
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    position: relative;
     transition: background 200ms, color 200ms;
-    line-height: 1;
 }
 
 .photo-wall-collapse-btn:hover {
     background: rgba(255, 255, 255, 0.15);
     color: var(--wall-text);
+}
+
+/* CSS chevron on the collapse button — points up (↑) when collapsed */
+.photo-wall-collapse-btn::before,
+.photo-wall-collapse-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 7px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 1px;
+    transition: transform 200ms;
+}
+
+.photo-wall-collapse-btn::before {
+    left: calc(50% - 7px);
+    transform: translateY(-50%) rotate(-45deg);
+    transform-origin: right center;
+}
+
+.photo-wall-collapse-btn::after {
+    left: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    transform-origin: left center;
+}
+
+/* Flip to down (↓) when expanded */
+.photo-wall-panel--half .photo-wall-collapse-btn::before,
+.photo-wall-panel--full .photo-wall-collapse-btn::before {
+    transform: translateY(-50%) rotate(45deg);
+    transform-origin: right center;
+}
+
+.photo-wall-panel--half .photo-wall-collapse-btn::after,
+.photo-wall-panel--full .photo-wall-collapse-btn::after {
+    transform: translateY(-50%) rotate(-45deg);
+    transform-origin: left center;
 }
 
 /* ── Grid Container ─────────────────────────────────────────────────── */
