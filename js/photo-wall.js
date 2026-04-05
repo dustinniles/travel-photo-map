@@ -737,6 +737,18 @@
             this._container.style.zIndex = '';
         }
 
+        // Keep feed sidebar bottom in sync with photo wall height
+        var heightMap = {
+            collapsed: 'var(--wall-collapsed-height)',
+            half: 'var(--wall-half-height)',
+            full: '100vh',
+            hidden: '0px'
+        };
+        document.documentElement.style.setProperty(
+            '--wall-current-height',
+            heightMap[state] || 'var(--wall-collapsed-height)'
+        );
+
         // Toggle button visibility is now managed by PanelCoordinator
 
         // Re-render after animation completes (panel height changed)

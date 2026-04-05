@@ -79,9 +79,10 @@
     right: 16px;
 }
 
-/* Hide toggle buttons on desktop — panels live side-by-side */
+/* Hide toggle buttons on desktop — panels live side-by-side.
+   Exception: the photo-wall reopen button is always available. */
 @media (min-width: 769px) {
-    .panel-toggle-btn {
+    .panel-toggle-btn:not(.photo-wall-reopen-btn) {
         display: none !important;
     }
 }

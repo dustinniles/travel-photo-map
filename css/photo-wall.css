@@ -38,7 +38,7 @@
     --z-viewer-controls: 2001;
 
     /* Photo Wall specific */
-    --wall-collapsed-height: 30vh;
+    --wall-collapsed-height: 20vh;
     --wall-half-height: 50vh;
     --wall-bg: var(--color-bg-panel);
     --wall-accent: var(--color-accent);
@@ -111,8 +111,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 44px;
-    padding: 10px 0 6px;
+    min-height: 32px;
+    padding: 6px 0 4px;
     cursor: grab;
     flex-shrink: 0;
     touch-action: none;
@@ -124,17 +124,58 @@
     cursor: grabbing;
 }
 
+/* Chevron arrow — replaces the drag grip bar */
 .photo-wall-handle-bar {
-    width: var(--panel-handle-width, 48px);
-    height: var(--panel-handle-height, 8px);
-    border-radius: var(--panel-handle-radius, 4px);
-    background: var(--panel-handle-color, rgba(255, 255, 255, 0.4));
-    transition: background 200ms;
+    width: 20px;
+    height: 20px;
+    position: relative;
+    background: none;
 }
 
-.photo-wall-handle:hover .photo-wall-handle-bar,
-.photo-wall-handle:active .photo-wall-handle-bar {
-    background: var(--panel-handle-hover, rgba(255, 255, 255, 0.6));
+.photo-wall-handle-bar::before,
+.photo-wall-handle-bar::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.45);
+    border-radius: 1px;
+    transition: background 200ms, transform 200ms;
+}
+
+/* Left arm of the chevron (↑) */
+.photo-wall-handle-bar::before {
+    left: 0;
+    transform: translateY(-50%) rotate(-45deg);
+    transform-origin: right center;
+}
+
+/* Right arm of the chevron (↑) */
+.photo-wall-handle-bar::after {
+    right: 0;
+    transform: translateY(-50%) rotate(45deg);
+    transform-origin: left center;
+}
+
+.photo-wall-handle:hover .photo-wall-handle-bar::before,
+.photo-wall-handle:hover .photo-wall-handle-bar::after,
+.photo-wall-handle:active .photo-wall-handle-bar::before,
+.photo-wall-handle:active .photo-wall-handle-bar::after {
+    background: rgba(255, 255, 255, 0.7);
+}
+
+/* When expanded to half or full, flip chevron to point down (↓) */
+.photo-wall-panel--half .photo-wall-handle-bar::before,
+.photo-wall-panel--full .photo-wall-handle-bar::before {
+    transform: translateY(-50%) rotate(45deg);
+    transform-origin: right center;
+}
+
+.photo-wall-panel--half .photo-wall-handle-bar::after,
+.photo-wall-panel--full .photo-wall-handle-bar::after {
+    transform: translateY(-50%) rotate(-45deg);
+    transform-origin: left center;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────── */
@@ -488,7 +529,7 @@
 /* ── Mobile Adjustments ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
     :root {
-        --wall-collapsed-height: 35vh;
+        --wall-collapsed-height: 25vh;
     }
 
     .photo-wall-reopen-btn {
