@@ -2,6 +2,17 @@
 
 Auto-generated from all feature plans. Last updated: 2026-02-20
 
+## Project Overview
+
+This is a travel photo map app built with HTML/CSS/JavaScript and Leaflet.js. Photos are sourced from Google Drive. The app uses static hosting via GitHub Pages.
+
+## Git Workflow
+
+- Always use feature branch → PR → merge workflow. Never commit directly to main. When pushing changes, create a PR using `gh` CLI (`gh pr create --fill && gh pr merge --merge`).
+- The `gh` CLI is installed and available. Always use it for PR creation and merging. Do not fall back to manual URLs.
+- When the user says 'commit and push' or 'deploy', they mean: stage all changes, commit with a descriptive message, push the branch, create a PR via gh CLI, and merge it. Do NOT start a local server unless explicitly asked.
+- Always check which branch you're on before any git operations. Run `git branch --show-current` first.
+
 ## Active Technologies
 - Vanilla JavaScript (ES5-compatible), CSS3, HTML5 + Leaflet.js (existing), Firebase SDK v11.6.0 (existing, vendored) (004-trip-feed)
 - Firestore `dailyNarratives/all` document (new); existing `manifest.json` and `trip_segments.json` for photo/segment data (004-trip-feed)
@@ -26,6 +37,21 @@ Auto-generated from all feature plans. Last updated: 2026-02-20
 - N/A — reads existing `data/manifest.json` and `data/itinerary.json` at runtime (010-trip-landing-page)
 - Vanilla JavaScript (ES5-compatible IIFE pattern), CSS3, HTML5 + Leaflet.js 1.9.4 (vendored), ViewportSampler.js (local), Leaflet.Photo.js (local) (010-trip-landing-page)
 - N/A — reads `data/manifest.json` and `data/itinerary.json` at runtime (010-trip-landing-page)
+- Vanilla JavaScript (ES5-compatible IIFE), CSS3, HTML5 + Leaflet.js (existing, vendored) (011-fix-video-playback)
+- Vanilla JavaScript (ES5-compatible IIFE), CSS3, HTML5 + Leaflet.js (vendored), no new dependencies (011-fix-video-playback)
+- N/A — reads `data/manifest.json` at runtime (011-fix-video-playback)
+- Vanilla JavaScript (ES5-compatible IIFEs), CSS3, HTML5 + Leaflet.js (vendored in `js/`), no new dependencies (012-fix-mobile-nav-ux)
+- N/A — pure UI changes, no data persistence (012-fix-mobile-nav-ux)
+- Vanilla JavaScript (ES5-compatible IIFEs for frontend), Python 3.10+ (processing pipeline) + Leaflet.js (vendored), ffmpeg/ffprobe (CLI, already available for thumbnails), Firebase Storage SDK v11 (vendored) (013-native-video-playback)
+- Firebase Storage (Spark free tier: 5 GB storage, 1 GB/day downloads) for transcoded video files; local `data/manifest.json` for metadata (013-native-video-playback)
+- Vanilla JavaScript (ES5-compatible IIFEs) + None new — Leaflet.js (existing, vendored) (015-shared-trip-model)
+- N/A — reads existing `data/manifest.json`, `data/trip_segments.json`, `data/itinerary.json` at runtime (015-shared-trip-model)
+- N/A — in-memory only, no persistence (016-app-state-module)
+- Vanilla JavaScript (ES5-compatible IIFE) + None (standalone module, no framework or library dependencies) (016-app-state-module)
+- Vanilla JavaScript (ES5-compatible IIFEs) + Leaflet.js 1.9.4 (vendored), no new dependencies (017-dom-builders)
+- N/A — reads existing JSON manifests at runtime (017-dom-builders)
+- Vanilla JavaScript (ES5-compatible IIFE), CSS3 + Leaflet.js (vendored), ViewportSampler.js (local), Leaflet.Photo.css (local) (022-photo-marker-improvements)
+- N/A — no data changes (022-photo-marker-improvements)
 
 - Vanilla JavaScript (ES2020+ modules), Python 3.10+ + Leaflet.js (existing, vendored), Firebase JS SDK v11 (Auth + Firestore Lite, vendored), firebase-admin (Python) (002-cloud-photo-backend)
 
@@ -50,10 +76,15 @@ Vanilla JavaScript (ES2020+ modules), Python 3.10+: Follow standard conventions
 - Test at both desktop (1440px) and mobile (375px) widths.
 
 ## Recent Changes
-- 010-trip-landing-page: Added Vanilla JavaScript (ES5-compatible IIFE pattern), CSS3, HTML5 + Leaflet.js 1.9.4 (vendored), ViewportSampler.js (local), Leaflet.Photo.js (local)
-- 010-trip-landing-page: Added Vanilla JavaScript (ES5-compatible IIFE in landing-page.js), CSS3, HTML5 + Leaflet.js (vendored), photo-viewer.js (existing global `window.photoViewer`)
-- 010-trip-landing-page: Added Vanilla JavaScript (ES2020+), CSS3, HTML5 + Leaflet.js (existing, vendored in `js/`)
+- 010-trip-landing-page: Added interactive detail map with ViewportSampler photo clusters
+- 022-photo-marker-improvements: Added Vanilla JavaScript (ES5-compatible IIFE), CSS3 + Leaflet.js (vendored), ViewportSampler.js (local), Leaflet.Photo.css (local)
+- 017-dom-builders: Added Vanilla JavaScript (ES5-compatible IIFEs) + Leaflet.js 1.9.4 (vendored), no new dependencies
+- 016-app-state-module: Added Vanilla JavaScript (ES5-compatible IIFE) + None (standalone module, no framework or library dependencies)
 
+
+## Testing
+
+- After implementing changes, test in the browser using the Playwright MCP before declaring work complete. Watch for: CSS z-index/positioning issues, gesture/pointer event interception, and browser caching of stale assets.
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

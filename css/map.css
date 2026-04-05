@@ -289,246 +289,6 @@ html, body {
     margin: 8px 0;
 }
 
-/* ──── Timeline ──── */
-.timeline-bar {
-    position: relative;
-    padding: 24px 0 24px;
-}
-
-.timeline-track {
-    position: relative;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    overflow: visible;
-}
-
-.timeline-segment {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    left: var(--seg-offset);
-    width: var(--seg-size);
-    border-radius: 4px;
-}
-
-/* Segment dot (always visible) */
-.segment-dot {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 5px;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-/* Segment inline label (only on wide segments) */
-.segment-label-inline {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: var(--font-xs);
-    font-weight: 600;
-    color: var(--color-text);
-    white-space: nowrap;
-    pointer-events: none;
-    text-align: center;
-}
-
-.label-top .segment-label-inline {
-    bottom: calc(100% + 4px);
-}
-
-.label-bottom .segment-label-inline {
-    top: calc(100% + 4px);
-}
-
-/* Segment tooltip (on hover) */
-.segment-tooltip {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--color-bg-panel-heavy);
-    color: var(--color-text);
-    font-size: var(--font-sm);
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity var(--duration-fast) ease;
-    z-index: 10;
-}
-
-.label-top .segment-tooltip {
-    bottom: calc(100% + 8px);
-}
-
-.label-bottom .segment-tooltip {
-    top: calc(100% + 8px);
-}
-
-.segment-tooltip::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 4px solid transparent;
-}
-
-.label-top .segment-tooltip::after {
-    top: 100%;
-    border-top-color: rgba(24, 24, 28, 0.95);
-}
-
-.label-bottom .segment-tooltip::after {
-    bottom: 100%;
-    border-bottom-color: rgba(24, 24, 28, 0.95);
-}
-
-.timeline-segment:hover .segment-tooltip,
-.timeline-segment.touched .segment-tooltip {
-    opacity: 1;
-}
-
-/* Timeline boundary markers */
-.timeline-boundary {
-    position: absolute;
-    top: -3px;
-    bottom: -3px;
-    left: var(--boundary-pos);
-    pointer-events: none;
-    z-index: 2;
-}
-
-.timeline-boundary-week {
-    border-left: 1px dashed rgba(255, 255, 255, 0.3);
-}
-
-.timeline-boundary-month {
-    border-left: 2px solid rgba(212, 168, 83, 0.6);
-}
-
-.boundary-label {
-    position: absolute;
-    top: -14px;
-    left: -1px;
-    font-size: var(--font-xs);
-    text-transform: uppercase;
-    color: rgba(212, 168, 83, 0.8);
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-/* Timeline handles */
-.timeline-handle {
-    position: absolute;
-    top: 20px;
-    left: 0;
-    width: 100%;
-    margin: 0;
-    pointer-events: none;
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    height: 16px;
-    z-index: 3;
-}
-
-.timeline-handle-min {
-    z-index: 4;
-}
-
-.timeline-handle::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--color-text);
-    border: 2px solid var(--color-accent);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-    pointer-events: auto;
-    transition: transform 0.1s ease;
-}
-
-.timeline-handle:hover::-webkit-slider-thumb {
-    transform: scale(1.2);
-}
-
-.timeline-handle:active::-webkit-slider-thumb {
-    transform: scale(1.3);
-}
-
-.timeline-handle::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--color-text);
-    border: 2px solid var(--color-accent);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-    cursor: pointer;
-    pointer-events: auto;
-    transition: transform 0.1s ease;
-}
-
-.timeline-handle:hover::-moz-range-thumb {
-    transform: scale(1.2);
-}
-
-.timeline-handle:active::-moz-range-thumb {
-    transform: scale(1.3);
-}
-
-.timeline-handle::-moz-range-track {
-    background: transparent;
-    border: none;
-}
-
-/* Range fill indicator */
-.timeline-range-fill {
-    position: absolute;
-    top: 0;
-    left: var(--range-start, 0%);
-    width: var(--range-size, 100%);
-    height: 100%;
-    background: rgba(212, 168, 83, 0.18);
-    border-left: 2px solid rgba(212, 168, 83, 0.4);
-    border-right: 2px solid rgba(212, 168, 83, 0.4);
-    border-radius: 4px;
-    pointer-events: none;
-    transition: left 0.05s ease, width 0.05s ease;
-    z-index: 1;
-}
-
-/* Date display */
-.timeline-date-display {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 6px;
-    font-size: var(--font-xs);
-    color: var(--color-text-muted);
-}
-
-/* Photo count pill */
-.timeline-photo-count {
-    text-align: center;
-    font-size: var(--font-xs);
-    color: var(--color-text-muted);
-    margin-top: 2px;
-    font-variant-numeric: tabular-nums;
-}
-
-.timeline-photo-count .photo-count-number {
-    font-weight: 600;
-    color: var(--color-accent);
-}
-
 /* Photo marker fade-in */
 .leaflet-marker-photo {
     transition: opacity 0.2s ease-in;
@@ -714,6 +474,15 @@ html, body {
     font-size: var(--font-md);
     font-weight: 600;
     color: var(--color-text);
+    flex: 1;
+}
+
+/* Accent bar to distinguish Feed from Photo Wall on mobile */
+@media (max-width: 768px) {
+    .feed-header {
+        border-left: 3px solid var(--color-accent, #d4a853);
+        padding-left: 13px;
+    }
 }
 
 .feed-close {
@@ -737,7 +506,6 @@ html, body {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 4px 0;
-    pointer-events: none;
 }
 .feed-entries.hidden { display: none; }
 
@@ -764,7 +532,6 @@ html, body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     cursor: pointer;
     transition: background 0.2s ease;
-    pointer-events: auto;
 }
 
 .feed-entry:hover {
@@ -886,21 +653,10 @@ html, body {
     border-bottom-color: var(--color-accent);
 }
 
-/* Feed drag handle (mobile) */
-.feed-drag-handle {
-    width: 40px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-    margin: 8px auto 4px;
-    flex-shrink: 0;
-    display: none;
-}
-
 /* ──── Mobile: bottom sheet ──── */
 @media (max-width: 768px) {
     .panel-toggle {
-        top: 10px;
+        top: 110px;
         left: 10px;
         bottom: auto;
         right: auto;
@@ -926,29 +682,6 @@ html, body {
     @keyframes controlSlideUp {
         from { transform: translateY(100%); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
-    }
-
-    .timeline-handle {
-        height: 32px;
-        top: 13px;
-    }
-
-    .timeline-handle::-webkit-slider-thumb {
-        width: 24px;
-        height: 24px;
-    }
-
-    .timeline-handle::-moz-range-thumb {
-        width: 24px;
-        height: 24px;
-    }
-
-    .timeline-track {
-        height: 10px;
-    }
-
-    .timeline-date-display {
-        font-size: var(--font-sm);
     }
 
     /* Touch targets: 44px minimum (T019, T021, T022, T023) */
@@ -978,43 +711,53 @@ html, body {
         font-size: 20px;
     }
 
-    /* Feed sidebar → bottom sheet on mobile */
-    .feed-toggle {
-        display: none;
-    }
-
+    /* Feed sidebar → bottom sheet on mobile (managed by PanelSnap) */
     .feed-sidebar {
         top: auto;
         left: 0;
         right: 0;
         bottom: 0;
         width: 100%;
-        height: 85vh;
         border-radius: 12px 12px 0 0;
         animation: none;
-        transform: translateY(calc(100% - 60px));
-        transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        touch-action: none;
     }
 
+    /* Desktop hidden class override: on mobile, hidden = translateY off-screen */
     .feed-sidebar.hidden {
-        transform: translateY(100%);
+        transform: translateX(0);
         opacity: 1;
     }
 
-    .feed-sidebar.feed-sheet-collapsed {
-        transform: translateY(calc(100% - 60px));
+    /* PanelSnap state classes for feed sidebar */
+    .feed-sidebar--collapsed {
+        height: var(--wall-collapsed-height, 30vh);
     }
 
-    .feed-sidebar.feed-sheet-half {
-        transform: translateY(50%);
+    .feed-sidebar--half {
+        height: 50vh;
     }
 
-    .feed-sidebar.feed-sheet-full {
-        transform: translateY(0);
+    .feed-sidebar--full {
+        height: 100vh;
+        border-radius: 0;
+        z-index: 1003;
     }
 
-    .feed-drag-handle {
-        display: block;
+    .feed-sidebar--hidden {
+        transform: translateY(100%) !important;
+        pointer-events: none;
+    }
+
+    .feed-sidebar--animating {
+        transition: height var(--panel-snap-duration, 250ms) var(--panel-snap-easing, cubic-bezier(0.22, 1, 0.36, 1)),
+                    border-radius var(--panel-snap-duration, 250ms) var(--panel-snap-easing, cubic-bezier(0.22, 1, 0.36, 1)),
+                    transform var(--panel-snap-duration, 250ms) var(--panel-snap-easing, cubic-bezier(0.22, 1, 0.36, 1));
+    }
+
+    /* Old feed toggle button hidden on mobile — replaced by panel-toggle-btn */
+    .feed-toggle {
+        display: none;
     }
 }
 
@@ -1271,4 +1014,64 @@ html, body {
         min-height: 64px;
         padding: 14px 10px;
     }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Map Interaction Policy — Mobile passive/active toggle
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Passive mode: allow page scroll through the map */
+#map.map--passive {
+    touch-action: pan-y !important;
+}
+
+/* Floating toggle button */
+.map-mode-btn {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: var(--z-panel-toggle, 1002);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(24, 24, 28, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #e0e0e0;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.map-mode-btn:active {
+    transform: scale(0.95);
+}
+
+/* Icon container */
+.map-mode-btn .map-mode-icon {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    transition: opacity 0.2s ease;
+}
+
+/* Default: show passive icon, hide active icon */
+.map-mode-btn .map-mode-icon-passive { opacity: 1; }
+.map-mode-btn .map-mode-icon-active  { opacity: 0; }
+
+/* Active state: gold background, swap icons */
+.map-mode-btn--active {
+    background: var(--color-accent, #d4a853);
+    color: #18181c;
+}
+.map-mode-btn--active .map-mode-icon-passive { opacity: 0; }
+.map-mode-btn--active .map-mode-icon-active  { opacity: 1; }
+
+/* Hide on desktop */
+@media (min-width: 769px) {
+    .map-mode-btn { display: none !important; }
 }

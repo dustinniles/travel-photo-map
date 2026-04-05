@@ -22,7 +22,8 @@
         scale: 1, tx: 0, ty: 0,
         loaded: false, pending: null, prePrev: null, preNext: null,
         ctrlVis: false, hideTimer: null, didDrag: false,
-        savedOverflow: '', savedMapPE: '', navGuardUntil: 0
+        savedOverflow: '', savedMapPE: '', navGuardUntil: 0,
+        qualityPref: '720p'  // session-persistent quality preference (FR-012)
     };
     var G = {
         mode: IDLE, ptrs: new Map(),
@@ -32,7 +33,7 @@
     };
 
     // ── DOM refs ──
-    var $ov, $wrap, $media, $close, $prev, $next, $info, $fav;
+    var $ov, $wrap, $media, $close, $prev, $next, $info, $fav, $dl;
     var $cap, $capEd, $capIn, $tagEd, $tagChips, $tagIn;
 
     // ── Helpers ──
@@ -49,29 +50,30 @@
         if ($ov) return;
         $ov = document.createElement('div');
         $ov.className = 'pv-overlay';
-        $ov.innerHTML =
-            '<div class="pv-wrap">' +
-                '<div class="pv-media"></div>' +
-            '</div>' +
-            '<button class="pv-close pv-ctrl" aria-label="Close">&times;</button>' +
-            '<button class="pv-fav pv-ctrl" aria-label="Favorite">&#9734;</button>' +
-            '<button class="pv-nav pv-prev pv-ctrl" aria-label="Previous">&#8249;</button>' +
-            '<button class="pv-nav pv-next pv-ctrl" aria-label="Next">&#8250;</button>' +
-            '<div class="pv-info pv-ctrl">' +
-                '<div class="pv-cap-wrap">' +
-                    '<p class="pv-cap"></p>' +
-                    '<div class="pv-cap-ed" style="display:none">' +
-                        '<textarea class="pv-cap-in" rows="2" placeholder="Add a caption..."></textarea>' +
-                    '</div>' +
-                '</div>' +
-                '<p class="pv-date"></p>' +
-                '<div class="pv-tags"></div>' +
-                '<div class="pv-tag-ed" style="display:none">' +
-                    '<div class="pv-tag-chips"></div>' +
-                    '<input class="pv-tag-in" type="text" placeholder="Add tag..." maxlength="50">' +
-                '</div>' +
-                '<a class="pv-link" target="_blank" rel="noopener noreferrer">View on Google Photos</a>' +
-            '</div>';
+        var _el = domHelpers.el;
+        $ov.appendChild(_el('div', {className: 'pv-wrap'},
+            _el('div', {className: 'pv-media'})
+        ));
+        $ov.appendChild(_el('button', {className: 'pv-close pv-ctrl', 'aria-label': 'Close'}, '\u00D7'));
+        $ov.appendChild(_el('button', {className: 'pv-fav pv-ctrl', 'aria-label': 'Favorite'}, '\u2606'));
+        $ov.appendChild(_el('button', {className: 'pv-dl pv-ctrl', 'aria-label': 'Download', style: 'display:none'}, '\u21E9'));
+        $ov.appendChild(_el('button', {className: 'pv-nav pv-prev pv-ctrl', 'aria-label': 'Previous'}, '\u2039'));
+        $ov.appendChild(_el('button', {className: 'pv-nav pv-next pv-ctrl', 'aria-label': 'Next'}, '\u203A'));
+        $ov.appendChild(_el('div', {className: 'pv-info pv-ctrl'},
+            _el('div', {className: 'pv-cap-wrap'},
+                _el('p', {className: 'pv-cap'}),
+                _el('div', {className: 'pv-cap-ed', style: 'display:none'},
+                    _el('textarea', {className: 'pv-cap-in', rows: '2', placeholder: 'Add a caption...'})
+                )
+            ),
+            _el('p', {className: 'pv-date'}),
+            _el('div', {className: 'pv-tags'}),
+            _el('div', {className: 'pv-tag-ed', style: 'display:none'},
+                _el('div', {className: 'pv-tag-chips'}),
+                _el('input', {className: 'pv-tag-in', type: 'text', placeholder: 'Add tag...', maxlength: '50'})
+            ),
+            _el('a', {className: 'pv-link', target: '_blank', rel: 'noopener noreferrer'}, 'View on Google Photos')
+        ));
         document.body.appendChild($ov);
 
         $wrap = $ov.querySelector('.pv-wrap');
@@ -81,6 +83,7 @@
         $next = $ov.querySelector('.pv-next');
         $info = $ov.querySelector('.pv-info');
         $fav = $ov.querySelector('.pv-fav');
+        $dl = $ov.querySelector('.pv-dl');
         $cap = $ov.querySelector('.pv-cap');
         $capEd = $ov.querySelector('.pv-cap-ed');
         $capIn = $ov.querySelector('.pv-cap-in');
@@ -93,13 +96,26 @@
         $prev.addEventListener('click', function (e) { e.stopPropagation(); nav(-1); });
         $next.addEventListener('click', function (e) { e.stopPropagation(); nav(1); });
 
+        $dl.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var url = $dl.dataset.url;
+            if (!url) return;
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = '';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
         $fav.addEventListener('click', function (e) {
             e.stopPropagation();
             if (S.idx < 0 || S.idx >= S.photos.length) return;
             var p = S.photos[S.idx];
-            emit('photoviewer:favorite', { photo: p });
             p._isFavorite = !p._isFavorite;
             updFav(p);
+            emit('photoviewer:favorite', { photo: p });
         });
 
         $ov.addEventListener('click', function (e) {
@@ -234,7 +250,7 @@
     }
 
     function finalize() {
-        // Stop video
+        // Stop video and release resources (FR-007)
         var vid = $media.querySelector('video');
         if (vid) { vid.pause(); vid.removeAttribute('src'); vid.load(); }
 
@@ -245,6 +261,7 @@
         $wrap.style.transition = '';
 
         S.open = false; S.idx = -1; S.photos = []; S.srcEl = null;
+        if (window.appState) window.appState.set('viewerOpen', false);
         resetZoom(); cancelLoads(); unlockScroll(); clearHide();
         document.removeEventListener('keydown', onKey);
         emit('photoviewer:close');
@@ -313,6 +330,10 @@
     function ptrDown(e) {
         if (!S.open) return;
         if (e.target.closest('.pv-ctrl')) return;
+        // Let video overlay buttons handle their own pointer events
+        if (e.target.closest('.pv-video-overlay')) return;
+        // Let native video controls handle their own pointer events
+        if (e.target.closest('video')) return;
         e.preventDefault();
 
         try { $wrap.setPointerCapture(e.pointerId); } catch (_) {}
@@ -465,6 +486,10 @@
         var p = S.photos[i];
         resetZoom(); cancelLoads();
 
+        // Stop any playing video before switching (FR-007, rapid nav cleanup)
+        var oldVid = $media.querySelector('video');
+        if (oldVid) { oldVid.pause(); oldVid.removeAttribute('src'); oldVid.load(); }
+
         $prev.style.display = i <= 0 ? 'none' : '';
         $next.style.display = i >= S.photos.length - 1 ? 'none' : '';
 
@@ -485,6 +510,10 @@
 
         $media.innerHTML = '';
         $media.appendChild(img);
+
+        // Download button for photos — FR-015
+        updDownloadBtn(p.web_url);
+
         S.loaded = false;
 
         if (p.web_url) {
@@ -506,25 +535,135 @@
     }
 
     function renderVideo(p) {
-        var old = $media.querySelector('video');
-        if (old) { old.pause(); old.removeAttribute('src'); old.load(); }
+        // Clean up any previous video
+        var oldVid = $media.querySelector('video');
+        if (oldVid) { oldVid.pause(); oldVid.removeAttribute('src'); oldVid.load(); }
 
-        var v = document.createElement('video');
-        v.className = 'pv-video';
-        v.controls = true;
-        v.playsInline = true;
-        v.preload = 'none';
-        v.poster = p.thumbnail;
-        v.src = p.web_url || p.url;
-        v.onerror = function () { errPlaceholder(); };
+        // Hide overlay download button (video has its own inline download)
+        updDownloadBtn(null);
+
+        if (!p.web_url) { errPlaceholder('video'); return; }
+
+        // Video wrapper for positioning overlays
+        var wrap = document.createElement('div');
+        wrap.className = 'pv-video-wrap';
+
+        // Native video element
+        var video = document.createElement('video');
+        video.className = 'pv-video-player';
+        video.setAttribute('controls', '');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('preload', 'metadata');
+        if (p.thumbnail) video.poster = p.thumbnail;
+
+        // Use session-persistent quality preference (FR-012)
+        var usingFull = S.qualityPref === 'full' && !!p.web_url_full;
+        var source = document.createElement('source');
+        source.src = usingFull ? p.web_url_full : p.web_url;
+        source.type = 'video/mp4';
+        video.appendChild(source);
+
+        // Error handling (FR-009) with silent full-res fallback (FR-012)
+        video.addEventListener('error', function () {
+            if (S.qualityPref === 'full' && p.web_url) {
+                // Silently fall back to 720p without showing an error (FR-012)
+                S.qualityPref = '720p';
+                source.src = p.web_url;
+                video.load();
+                var gb = wrap.querySelector('.pv-video-gear');
+                if (gb) { gb.textContent = '720p'; gb.dataset.quality = '720p'; }
+                var dlb = wrap.querySelector('.pv-video-download');
+                if (dlb) dlb.dataset.url = p.web_url;
+            } else {
+                var errDiv = domHelpers.el('div', {className: 'pv-error'},
+                    'Video unavailable',
+                    p.google_photos_url ? domHelpers.el('br') : null,
+                    p.google_photos_url ? domHelpers.el('a', {
+                        className: 'pv-error-link',
+                        href: p.google_photos_url,
+                        target: '_blank',
+                        rel: 'noopener noreferrer'
+                    }, 'View on Google Drive') : null
+                );
+                wrap.innerHTML = '';
+                wrap.appendChild(errDiv);
+            }
+        });
+
+        wrap.appendChild(video);
+
+        // Overlay controls: quality toggle + download
+        // Note: NOT using .pv-ctrl — these buttons must always be clickable (FR-016)
+        var overlay = document.createElement('div');
+        overlay.className = 'pv-video-overlay';
+
+        // Quality toggle button — FR-012, FR-014, FR-016
+        if (p.web_url_full) {
+            var gearBtn = document.createElement('button');
+            gearBtn.className = 'pv-video-gear';
+            gearBtn.setAttribute('aria-label', 'Switch video quality');
+            var initQuality = usingFull ? 'full' : '720p';
+            gearBtn.textContent = initQuality === 'full' ? 'Full' : '720p';
+            gearBtn.dataset.quality = initQuality;
+            gearBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var currentTime = video.currentTime;
+                var wasPlaying = !video.paused;
+                var newQuality = gearBtn.dataset.quality === '720p' ? 'full' : '720p';
+                var newSrc = newQuality === '720p' ? p.web_url : p.web_url_full;
+                source.src = newSrc;
+                video.load();
+                video.addEventListener('loadedmetadata', function onMeta() {
+                    video.removeEventListener('loadedmetadata', onMeta);
+                    video.currentTime = currentTime;
+                    if (wasPlaying) video.play().catch(function () {});
+                });
+                gearBtn.dataset.quality = newQuality;
+                gearBtn.textContent = newQuality === 'full' ? 'Full' : '720p';
+                S.qualityPref = newQuality;  // persist for page session (FR-012)
+                var dlBtn = wrap.querySelector('.pv-video-download');
+                if (dlBtn) dlBtn.dataset.url = newSrc;
+            });
+            overlay.appendChild(gearBtn);
+        }
+
+        // Download button — FR-013
+        var dlBtn = document.createElement('button');
+        dlBtn.className = 'pv-video-download';
+        dlBtn.setAttribute('aria-label', 'Download video');
+        dlBtn.textContent = '\u21E9'; // ⇩ down arrow
+        dlBtn.dataset.url = usingFull ? p.web_url_full : p.web_url;
+        dlBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var a = document.createElement('a');
+            a.href = dlBtn.dataset.url;
+            a.download = '';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+        overlay.appendChild(dlBtn);
+
+        wrap.appendChild(overlay);
+
+        // Edge-zone swipe overlays for touch navigation
+        var zones = ['left', 'right', 'top'];
+        for (var z = 0; z < zones.length; z++) {
+            var zone = document.createElement('div');
+            zone.className = 'pv-swipe-zone pv-swipe-zone--' + zones[z];
+            wrap.appendChild(zone);
+        }
 
         $media.innerHTML = '';
-        $media.appendChild(v);
+        $media.appendChild(wrap);
         S.loaded = true;
     }
 
-    function errPlaceholder() {
-        $media.innerHTML = '<div class="pv-error">Photo unavailable</div>';
+    function errPlaceholder(type) {
+        var msg = type === 'video' ? 'Video unavailable' : 'Photo unavailable';
+        $media.innerHTML = '';
+        $media.appendChild(domHelpers.el('div', {className: 'pv-error'}, msg));
     }
 
     // ── Preloading (T025, T026, T030) ──
@@ -590,34 +729,44 @@
     }
 
     function renderTags(p) {
-        var el = $ov.querySelector('.pv-tags'), tags = eTags(p);
+        var tagsEl = $ov.querySelector('.pv-tags'), tags = eTags(p);
+        tagsEl.textContent = '';
         if (tags && tags.length) {
-            var h = ''; for (var i = 0; i < tags.length; i++) h += '<span class="pv-tag">' + tags[i] + '</span>';
-            el.innerHTML = h; el.style.display = '';
-        } else { el.innerHTML = ''; el.style.display = 'none'; }
+            for (var i = 0; i < tags.length; i++) tagsEl.appendChild(domHelpers.el('span', {className: 'pv-tag'}, tags[i]));
+            tagsEl.style.display = '';
+        } else { tagsEl.style.display = 'none'; }
     }
 
     function renderTagChips(p) {
-        var tags = eTags(p), h = '';
-        for (var i = 0; i < tags.length; i++)
-            h += '<span class="pv-tag-chip">' + tags[i] + '<button class="pv-chip-x" data-tag="' + tags[i] + '">&times;</button></span>';
-        $tagChips.innerHTML = h;
-        var btns = $tagChips.querySelectorAll('.pv-chip-x');
-        for (var r = 0; r < btns.length; r++) {
-            btns[r].addEventListener('click', function (evt) {
-                evt.stopPropagation();
-                var tag = this.getAttribute('data-tag');
-                var ph = S.photos[S.idx];
-                var cur = eTags(ph).slice();
-                var idx = cur.indexOf(tag); if (idx !== -1) cur.splice(idx, 1);
-                emit('photoviewer:tag-edit', { photoId: pid(ph), tags: cur });
-                renderTagChips(ph); renderTags(ph);
-            });
+        var tags = eTags(p);
+        $tagChips.textContent = '';
+        for (var i = 0; i < tags.length; i++) {
+            (function (tag) {
+                var xBtn = domHelpers.el('button', {className: 'pv-chip-x'}, '\u00D7');
+                xBtn.addEventListener('click', function (evt) {
+                    evt.stopPropagation();
+                    var ph = S.photos[S.idx];
+                    var cur = eTags(ph).slice();
+                    var idx = cur.indexOf(tag); if (idx !== -1) cur.splice(idx, 1);
+                    emit('photoviewer:tag-edit', { photoId: pid(ph), tags: cur });
+                    renderTagChips(ph); renderTags(ph);
+                });
+                $tagChips.appendChild(domHelpers.el('span', {className: 'pv-tag-chip'}, tag, xBtn));
+            })(tags[i]);
+        }
+    }
+
+    function updDownloadBtn(url) {
+        if (url) {
+            $dl.dataset.url = url;
+            $dl.style.display = '';
+        } else {
+            $dl.style.display = 'none';
         }
     }
 
     function updFav(p) {
-        $fav.innerHTML = p._isFavorite ? '&#9733;' : '&#9734;';
+        $fav.textContent = p._isFavorite ? '\u2605' : '\u2606';
         $fav.classList.toggle('pv-is-fav', !!p._isFavorite);
     }
 
@@ -678,6 +827,11 @@
 
         build();
         S.open = true; S.photos = photos; S.srcEl = sourceElement || null;
+        // viewerOpen: No onChange consumers needed yet. photo-viewer owns this state and
+        // already emits photoviewer:open / photoviewer:close CustomEvents. Spec 021
+        // (mobile map policy) is the likely first consumer — it will subscribe via
+        // appState.onChange('viewerOpen', ...) to disable map interaction while open.
+        if (window.appState) window.appState.set('viewerOpen', true);
         lockScroll();
 
         $ov.classList.add('pv-controls-visible');
