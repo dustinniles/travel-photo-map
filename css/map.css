@@ -402,7 +402,7 @@ html, body {
     position: fixed;
     top: 10px;
     right: 10px;
-    bottom: calc(var(--wall-collapsed-height) + 20px);
+    bottom: calc(var(--wall-current-height, var(--wall-collapsed-height)) + 20px);
     width: 280px;
     z-index: var(--z-panel-controls);
     background: var(--color-bg-panel);
@@ -415,7 +415,8 @@ html, body {
     display: flex;
     flex-direction: column;
     transform: translateX(0);
-    transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+    transition: transform 0.25s ease-out, opacity 0.25s ease-out,
+                bottom 250ms cubic-bezier(0.22, 1, 0.36, 1);
     animation: feedSlideIn 0.3s ease-out;
 }
 
